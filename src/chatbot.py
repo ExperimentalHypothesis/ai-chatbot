@@ -127,7 +127,7 @@ class Chatbot:
         """
         prompt = ChatPromptTemplate.from_messages([
             MessagesPlaceholder(variable_name=self.settings.CHAT_MEMORY_KEY),
-            ("user", "{input}"),  # The current user's question
+            ("user", "{input}"),
             ("user", USER_REPHRASE_PROMPT),
         ])
         return create_history_aware_retriever(
@@ -159,8 +159,8 @@ class Chatbot:
         to `document_combiner` to generate the final answer from the LLM.
         """
         return create_retrieval_chain(
-            self.history_aware_retriever,  # Handles getting relevant docs, aware of history
-            self.document_combiner  # Handles combining docs + prompt for final answer
+            self.history_aware_retriever,
+            self.document_combiner
         )
 
     def _init_llm(self) -> ChatOpenAI:
