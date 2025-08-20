@@ -1,3 +1,6 @@
+import logging
+import warnings
+
 from langchain.agents.format_scratchpad.openai_tools import format_to_openai_tool_messages
 from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
 from langchain_core.runnables import RunnablePassthrough
@@ -10,16 +13,18 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from src.prompts import USER_REPHRASE_PROMPT, AGENT_SYSTEM_PROMPT
 from src.config import Settings
-from src.embedding_service import EmbeddingService
+from src.embeddings import EmbeddingService
 from src.prompts import QA_SYSTEM_PROMPT
 from src.tools import get_current_time, save_conversation, create_qa_tool
 
+logging.basicConfig(level=logging.INFO)
 
 class Chatbot:
     """
     A stateful chatbot that orchestrates the RAG chain and answers questions in a conversational style.
     """
     def __init__(self, settings: Settings):
+        self.logger = logging.getLogger(__name__)
         self.settings = settings
         self.embedding = EmbeddingService(settings)
         self.retriever = self.embedding.get_retriever()
@@ -51,7 +56,7 @@ class Chatbot:
 
     def clear_chat_history(self):
         self.memory.clear()
-        print("Chat history cleared.")
+        self.logger.info("Chat history cleared.")
 
     @property
     def tools(self):
@@ -105,12 +110,14 @@ class Chatbot:
         """
         Memory for multiturn conversation.
         """
-        return ConversationBufferWindowMemory(
-            k=self.settings.CHAT_TURNS,
-            memory_key=self.settings.CHAT_MEMORY_KEY,
-            return_messages=True,
-            ai_prefix="Assistant"
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            return ConversationBufferWindowMemory(
+                k=self.settings.CHAT_TURNS,
+                memory_key=self.settings.CHAT_MEMORY_KEY,
+                return_messages=True,
+                ai_prefix="Assistant"
+            )
 
     def _init_history_aware_retriever(self):
         """

@@ -48,7 +48,10 @@ python main.py
 - **Interactive CLI:** A simple and easy-to-use command-line interface for interacting with the chatbot.
 
 
-## TODO & Improvements
-- **Better GUI:**
+## TODOs: Next Steps & Improvements
+- **Better chunking strategy:** This would have a major impact. There really should be a custom class that chunks the document in a much better way then what `RecursiveCharacterTextSplitter` does.
+- **Create better GUI:** 
+- **Add observability:**
 - **Better storage:**
-- **Better chunking strategy:** This would help a lot
+- **Add some eval:**  
+
