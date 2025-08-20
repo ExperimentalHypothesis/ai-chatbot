@@ -1,7 +1,10 @@
 import warnings
 from datetime import datetime
 from functools import partial
+from langchain.agents.format_scratchpad.openai_tools import format_to_openai_tool_messages
+from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
 
+from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -13,7 +16,7 @@ from src.config import Settings
 from src.embedding_service import EmbeddingService
 from src.prompts import QA_SYSTEM_PROMPT
 
-from langchain_core.tools import tool
+from langchain_core.tools import tool, Tool
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 
 from src.tools import get_current_time, answer_questions_from_documents, save_conversation
@@ -62,33 +65,64 @@ class Chatbot:
         """
         This method defines all the tools the agent can use.
         """
-        # qa_tool = partial(answer_questions_from_documents, rag_chain=self.rag_chain, memory=self.memory)
-        # qa_tool.__doc__ = answer_questions_from_documents.__doc__
-        #
-        # save_tool = partial(save_conversation, memory=self.memory)
-        # save_tool.__doc__ = save_conversation.__doc__
-        #
-        # time_tool = get_current_time
 
+        def run_qa_tool(question: str) -> str:
+            """
+            Use this to answer questions using the internal knowledge base.
+            This should be your first choice for any informational question.
+            """
+            return answer_questions_from_documents(
+                question=question,
+                rag_chain=self.rag_chain,
+                memory=self.memory,
+                memory_key=self.settings.CHAT_MEMORY_KEY,
+            )
 
+        # stateful tools
+        qa_tool = Tool(
+            name="answer_questions_from_documents",
+            func=run_qa_tool,
+            description="Use this to answer questions using the internal knowledge base. This should be your first choice for any informational question."
+        )
 
-        return [get_current_time]
+        # stateless tool
+        save_tool = save_conversation
+        time_tool = get_current_time
+
+        return [qa_tool, save_tool, time_tool]
 
     def _init_agent_executor(self):
         """
         Initializes the agent that can choose between tools.
+
+        It creates the agent runnable chain which defines the flow:
+         - Get input, history, and scratchpad
+         - Put them into the prompt
+         - Send to the LLM (which has tools bound to it)
+         - Parse the LLM's output
         """
-        agent_prompt = ChatPromptTemplate.from_messages([
+        prompt = ChatPromptTemplate.from_messages([
             ("system", AGENT_SYSTEM_PROMPT),
             MessagesPlaceholder(variable_name=self.settings.CHAT_MEMORY_KEY),
             ("user", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
 
-        agent = create_openai_tools_agent(self.llm, self.tools, agent_prompt)
-        agent_executor = AgentExecutor(agent=agent, tools=self.tools, verbose=True)
+        # this is a bit of magic actually :/
+        agent = (
+                RunnablePassthrough.assign(
+                    agent_scratchpad=lambda x: format_to_openai_tool_messages(
+                        x["intermediate_steps"]
+                    )
+                )
+                | prompt
+                | self.llm.bind_tools(self.tools)
+                | OpenAIToolsAgentOutputParser()
+        )
 
+        agent_executor = AgentExecutor(agent=agent, tools=self.tools, verbose=True)
         return agent_executor
+
 
     def _init_memory(self):
         """
