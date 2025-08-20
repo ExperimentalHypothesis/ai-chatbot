@@ -16,10 +16,9 @@ from src.config import Settings
 from src.embedding_service import EmbeddingService
 from src.prompts import QA_SYSTEM_PROMPT
 
-from langchain_core.tools import tool, Tool
-from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.agents import AgentExecutor
 
-from src.tools import get_current_time, answer_questions_from_documents, save_conversation
+from src.tools import get_current_time, save_conversation, create_qa_tool
 
 
 class Chatbot:
@@ -65,27 +64,11 @@ class Chatbot:
         """
         This method defines all the tools the agent can use.
         """
-
-        def run_qa_tool(question: str) -> str:
-            """
-            Use this to answer questions using the internal knowledge base.
-            This should be your first choice for any informational question.
-            """
-            return answer_questions_from_documents(
-                question=question,
-                rag_chain=self.rag_chain,
-                memory=self.memory,
-                memory_key=self.settings.CHAT_MEMORY_KEY,
-            )
-
-        # stateful tools
-        qa_tool = Tool(
-            name="answer_questions_from_documents",
-            func=run_qa_tool,
-            description="Use this to answer questions using the internal knowledge base. This should be your first choice for any informational question."
+        qa_tool = create_qa_tool(
+            rag_chain=self.rag_chain,
+            memory=self.memory,
+            memory_key=self.settings.CHAT_MEMORY_KEY
         )
-
-        # stateless tool
         save_tool = save_conversation
         time_tool = get_current_time
 

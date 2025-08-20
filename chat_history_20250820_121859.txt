@@ -1,0 +1,10 @@
+Conversation History
+====================
+
+User: what is the day today
+Assistant: Today is August 20, 2025.
+User: what do you know about bananas
+Assistant: Bananas are classified as berries, while strawberries are not.
+User: and what do you know about apples
+Assistant: I don't have enough information in the provided documents to answer that question.
+User: save the conversation

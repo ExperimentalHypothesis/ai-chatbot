@@ -6,30 +6,33 @@ from langchain_core.tools import tool
 from langchain.chains.retrieval import create_retrieval_chain
 
 
-def answer_questions_from_documents(question: str,
-                                    memory: ConversationBufferWindowMemory,
-                                    rag_chain,
-                                    memory_key: str) -> str:
-    """
-    Use this tool to answer user questions about the provided context.
-    This should be your default tool for any informational query.
-    """
-    chat_memory = memory.load_memory_variables({})[memory_key]
-    response = rag_chain.invoke(
-        {"input": question, memory_key: chat_memory}
-    )
-    answer = response["answer"]
-    source_docs = response.get("context", [])
+# stateful tool
+def create_qa_tool(rag_chain, memory, memory_key):
+    @tool
+    def qa_documents(question: str) -> str:
+        """
+        Use this tool to answer user questions about the provided context.
+        This should be your default tool for any informational query.
+        """
+        chat_memory = memory.load_memory_variables({})[memory_key]
+        response = rag_chain.invoke(
+            {"input": question, memory_key: chat_memory}
+        )
+        answer = response["answer"]
+        source_docs = response.get("context", [])
 
-    if source_docs:
-        sources_list = [
-            f"- {doc.metadata.get('source', 'Unknown Source')}" for doc in source_docs
-        ]
-        if sources_list:
-            answer += "\n\nSources:\n" + "\n".join(sorted(list(set(sources_list))))
-    return answer
+        if source_docs:
+            sources_list = [
+                f"- {doc.metadata.get('source', 'Unknown Source')}" for doc in source_docs
+            ]
+            if sources_list:
+                answer += "\n\nSources:\n" + "\n".join(sorted(list(set(sources_list))))
+        return answer
+
+    return qa_documents
 
 
+# stateless tools
 @tool
 def get_current_time():
     """
@@ -37,7 +40,6 @@ def get_current_time():
     Call this whenever a user asks for the time, the date, or anything related to the current moment.
     """
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
 
 @tool
 def save_conversation(conversation_history: str) -> str:
