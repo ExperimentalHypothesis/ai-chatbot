@@ -18,15 +18,19 @@ def create_qa_tool(rag_chain, memory, memory_key):
         source_docs = response.get("context", [])
 
         if source_docs:
-            sources_list = [
-                f"- {doc.metadata.get('source', 'Unknown Source')}" for doc in source_docs
-            ]
-            if sources_list:
-                answer += "\n\nSources:\n" + "\n".join(sorted(list(set(sources_list))))
+            unique_sources = set()
+            for doc in source_docs:
+                source = doc.metadata.get('source', 'Unknown Source')
+                page = doc.metadata.get('page', '')
+                page_info = f"page {page + 1}" if page != '' else "Unknown Page"
+                unique_sources.add(f"- {source} ({page_info})")
+
+            if unique_sources:
+                sources_text = "\n".join(sorted(list(unique_sources)))
+                answer += f"\n\n**Sources:**\n{sources_text}"
         return answer
 
     return qa_documents
-
 
 @tool
 def save_conversation(conversation_history: str) -> str:
