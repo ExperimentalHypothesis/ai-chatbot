@@ -11,6 +11,7 @@ Follow these instructions to set up and run the chatbot on your local machine.
 - Python 3.13 or higher
 - UV as package manager
 - An OpenAI API key
+- LangSmith api key for monitoring
 
 ### Installation
 
@@ -49,10 +50,9 @@ python main.py
 
 
 ## TODOs: Next Steps & Improvements
-- **Better chunking strategy:** This would have a major impact. There really should be a custom class that chunks the document in a much better way then what `RecursiveCharacterTextSplitter` does.
+- **Better chunking strategy:** This would have a major impact. There really should be a custom class that chunks the document into more logical parts (chapters/subchapters) then what `RecursiveCharacterTextSplitter` does.
 - **Better storage:**
 - **Add some eval:**
-- **Add observability:** 
 
 
 

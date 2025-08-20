@@ -10,6 +10,7 @@ dependencies = [
     "langchain-chroma>=0.2.5",
     "langchain-community>=0.3.27",
     "langchain-openai>=0.3.30",
+    "langsmith>=0.4.14",
     "pydantic-settings>=2.10.1",
     "pypdf>=6.0.0",
 ]

@@ -28,14 +28,6 @@ def create_qa_tool(rag_chain, memory, memory_key):
     return qa_documents
 
 
-# @tool
-# def get_current_time():
-#     """
-#     Get the current date and time.
-#     Call this whenever a user asks for the time, the date, or anything related to the current moment.
-#     """
-#     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
 @tool
 def save_conversation(conversation_history: str) -> str:
     """

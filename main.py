@@ -35,6 +35,7 @@ def init_chatbot() -> Chatbot:
 def main():
     init_embeddings()
     chatbot = init_chatbot()
+
     def chat_function(message, history):
         logger.info(f"User query: {message}")
         response = chatbot.ask(message)
