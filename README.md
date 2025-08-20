@@ -50,8 +50,9 @@ python main.py
 
 ## TODOs: Next Steps & Improvements
 - **Better chunking strategy:** This would have a major impact. There really should be a custom class that chunks the document in a much better way then what `RecursiveCharacterTextSplitter` does.
-- **Create better GUI:** 
-- **Add observability:**
 - **Better storage:**
-- **Add some eval:**  
+- **Add some eval:**
+- **Add observability:** 
+
+
 
