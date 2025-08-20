@@ -1,8 +1,0 @@
-Conversation History
-====================
-
-User: what is the day today
-Assistant: Today is August 20, 2025.
-User: what do you know about bananas
-Assistant: Bananas are classified as berries, while strawberries are not.
-User: save it to history
