@@ -1,12 +1,8 @@
 
 from datetime import datetime
-
-from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.tools import tool
-from langchain.chains.retrieval import create_retrieval_chain
 
 
-# stateful tool
 def create_qa_tool(rag_chain, memory, memory_key):
     @tool
     def qa_documents(question: str) -> str:
@@ -32,7 +28,6 @@ def create_qa_tool(rag_chain, memory, memory_key):
     return qa_documents
 
 
-# stateless tools
 @tool
 def get_current_time():
     """

@@ -1,23 +1,17 @@
-import warnings
-from datetime import datetime
-from functools import partial
 from langchain.agents.format_scratchpad.openai_tools import format_to_openai_tool_messages
 from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
-
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.memory import ConversationBufferWindowMemory
+from langchain.agents import AgentExecutor
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from src.prompts import USER_REPHRASE_PROMPT, AGENT_SYSTEM_PROMPT
 
+from src.prompts import USER_REPHRASE_PROMPT, AGENT_SYSTEM_PROMPT
 from src.config import Settings
 from src.embedding_service import EmbeddingService
 from src.prompts import QA_SYSTEM_PROMPT
-
-from langchain.agents import AgentExecutor
-
 from src.tools import get_current_time, save_conversation, create_qa_tool
 
 
@@ -62,7 +56,7 @@ class Chatbot:
     @property
     def tools(self):
         """
-        This method defines all the tools the agent can use.
+        Defines all the tools the agent can use.
         """
         qa_tool = create_qa_tool(
             rag_chain=self.rag_chain,
@@ -78,7 +72,7 @@ class Chatbot:
         """
         Initializes the agent that can choose between tools.
 
-        It creates the agent runnable chain which defines the flow:
+        It creates the agent-runnable chain which defines the flow:
          - Get input, history, and scratchpad
          - Put them into the prompt
          - Send to the LLM (which has tools bound to it)
