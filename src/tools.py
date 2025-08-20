@@ -45,7 +45,6 @@ def save_conversation(conversation_history: str) -> str:
         with open(filename, "w", encoding="utf-8") as f:
             f.write("Conversation History\n")
             f.write("=" * 20 + "\n\n")
-            # The agent already formatted the history, so we just write it.
             f.write(conversation_history)
 
         return f"Conversation successfully saved to '{filename}'."
