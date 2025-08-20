@@ -1,15 +1,22 @@
 import warnings
+from datetime import datetime
+from functools import partial
 
 from langchain_openai import ChatOpenAI
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from src.prompts import USER_REPHRASE_PROMPT
+from src.prompts import USER_REPHRASE_PROMPT, AGENT_SYSTEM_PROMPT
 
 from src.config import Settings
 from src.embedding_service import EmbeddingService
 from src.prompts import QA_SYSTEM_PROMPT
+
+from langchain_core.tools import tool
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+
+from src.tools import get_current_time, answer_questions_from_documents, save_conversation
 
 
 class Chatbot:
@@ -18,37 +25,70 @@ class Chatbot:
     """
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.embedding = EmbeddingService(settings) # TODO: dep inj. (?)
+        self.embedding = EmbeddingService(settings)
         self.retriever = self.embedding.get_retriever()
 
-        # init all the crap needed for full-conversational mode
+        # init all needed for full-conversational mode
         self.llm = self._init_llm()
         self.memory = self._init_memory()
         self.history_aware_retriever = self._init_history_aware_retriever()
         self.document_combiner = self._init_document_combiner()
         self.rag_chain = self._init_rag_chain()
 
+        # init agent needed for tool picking
+        self.agent_executor = self._init_agent_executor()
+
     def ask(self, question: str) -> str:
+        """
+        Main exposure point.
+        """
         chat_memory = self.memory.load_memory_variables({})[self.settings.CHAT_MEMORY_KEY]
-        response = self.rag_chain.invoke({"input": question, self.settings.CHAT_MEMORY_KEY: chat_memory})
-        self.memory.save_context({"input": question}, {"output": response["answer"]})
 
-        answer = response["answer"]
-        source_docs = response.get("context", [])
+        response = self.agent_executor.invoke({
+            "input": question,
+            self.settings.CHAT_MEMORY_KEY: chat_memory
+        })
 
-        if source_docs:
-            sources_list = []
-            for doc in source_docs:
-                source_name = doc.metadata.get('source', 'Unknown Source')
-                sources_list.append(f"- {source_name}")
-            if sources_list:
-                answer += "\n\nSources:\n" + "\n".join(sorted(list(set(sources_list))))
-
+        answer = response["output"]
+        self.memory.save_context({"input": question}, {"output": answer})
         return answer
 
     def clear_chat_history(self):
         self.memory.clear()
         print("Chat history cleared.")
+
+    @property
+    def tools(self):
+        """
+        This method defines all the tools the agent can use.
+        """
+        # qa_tool = partial(answer_questions_from_documents, rag_chain=self.rag_chain, memory=self.memory)
+        # qa_tool.__doc__ = answer_questions_from_documents.__doc__
+        #
+        # save_tool = partial(save_conversation, memory=self.memory)
+        # save_tool.__doc__ = save_conversation.__doc__
+        #
+        # time_tool = get_current_time
+
+
+
+        return [get_current_time]
+
+    def _init_agent_executor(self):
+        """
+        Initializes the agent that can choose between tools.
+        """
+        agent_prompt = ChatPromptTemplate.from_messages([
+            ("system", AGENT_SYSTEM_PROMPT),
+            MessagesPlaceholder(variable_name=self.settings.CHAT_MEMORY_KEY),
+            ("user", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ])
+
+        agent = create_openai_tools_agent(self.llm, self.tools, agent_prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=self.tools, verbose=True)
+
+        return agent_executor
 
     def _init_memory(self):
         """
@@ -56,10 +96,9 @@ class Chatbot:
         """
         return ConversationBufferWindowMemory(
             k=self.settings.CHAT_TURNS,
-            # Stores the last 5 conversation turns (user input + AI response), total 10 messages
-            memory_key=self.settings.CHAT_MEMORY_KEY,  # The key used in the prompt templates for history
-            return_messages=True,  # Return messages as LangChain message objects
-            ai_prefix="Assistant"  # Label for AI messages in history
+            memory_key=self.settings.CHAT_MEMORY_KEY,
+            return_messages=True,
+            ai_prefix="Assistant"
         )
 
     def _init_history_aware_retriever(self):
@@ -70,14 +109,14 @@ class Chatbot:
         for semantic search. This handles references like "it" or "that".
         """
         prompt = ChatPromptTemplate.from_messages([
-            MessagesPlaceholder(variable_name=self.settings.CHAT_MEMORY_KEY),  # Inject chat history here
+            MessagesPlaceholder(variable_name=self.settings.CHAT_MEMORY_KEY),
             ("user", "{input}"),  # The current user's question
             ("user", USER_REPHRASE_PROMPT),
         ])
         return create_history_aware_retriever(
-            self.llm,  # The LLM used to rephrase the query
-            self.retriever,  # The underlying retriever that will get documents based on the rephrased query
-            prompt  # The specific prompt to guide the rephrasing LLM
+            self.llm,
+            self.retriever,
+            prompt
         )
 
     def _init_document_combiner(self):
