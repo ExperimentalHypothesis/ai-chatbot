@@ -35,9 +35,13 @@ Execute the `main.py` script from the root directory:
 ```bash
 python main.py
 ```
+- It will launch a GUI http://127.0.0.1:7860/  where you can type questions.
+
+## How it works
 
 - The first time you run the application, it will check if a vector store exists in the `db` directory.
-- If not found, it will automatically process the documents in the `docs` directory, create the embeddings, and save them to the `db` directory. This may take some time.
+- If not found, it will automatically process the document in the `docs` directory, create the embeddings, and save them to the `db` directory. It may take some time.
+- Embedding it done only once, additional re-launch will skip it. 
 - Once the vector store is ready, the interactive chat session will begin.
 
 ## Features
@@ -51,8 +55,8 @@ python main.py
 
 ## TODOs: Next Steps & Improvements
 - **Better chunking strategy:** This would have a major impact. There really should be a custom class that chunks the document into more logical parts (chapters/subchapters) then what `RecursiveCharacterTextSplitter` does.
-- **Better storage:**
-- **Add some eval:**
+- **Better storage:** 
+- **Add some evaluation:**
 
 
 
