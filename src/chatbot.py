@@ -15,7 +15,7 @@ from src.prompts import USER_REPHRASE_PROMPT, AGENT_SYSTEM_PROMPT
 from src.config import Settings
 from src.embeddings import EmbeddingService
 from src.prompts import QA_SYSTEM_PROMPT
-from src.tools import get_current_time, save_conversation, create_qa_tool
+from src.tools import save_conversation, create_qa_tool
 
 logging.basicConfig(level=logging.INFO)
 
@@ -27,7 +27,7 @@ class Chatbot:
         self.logger = logging.getLogger(__name__)
         self.settings = settings
         self.embedding = EmbeddingService(settings)
-        self.retriever = self.embedding.get_retriever()
+        self.retriever = self.embedding.get_retriever(self.settings.TOP_K_RETRIEVED)
 
         # init all needed for full-conversational mode
         self.llm = self._init_llm()
@@ -69,9 +69,8 @@ class Chatbot:
             memory_key=self.settings.CHAT_MEMORY_KEY
         )
         save_tool = save_conversation
-        time_tool = get_current_time
 
-        return [qa_tool, save_tool, time_tool]
+        return [qa_tool, save_tool]
 
     def _init_agent_executor(self):
         """
@@ -145,7 +144,7 @@ class Chatbot:
         into a single prompt for the LLM to generate the final answer.
         """
         prompt = ChatPromptTemplate.from_messages([
-            ("system", QA_SYSTEM_PROMPT + "Context\n{context}"),
+            ("system", QA_SYSTEM_PROMPT),
             MessagesPlaceholder(variable_name=self.settings.CHAT_MEMORY_KEY),
             ("user", "{input}"),
         ])

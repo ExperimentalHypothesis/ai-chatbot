@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
 
     LLM_MODEL: str = "gpt-4o-mini"
-    LLM_TEMPERATURE: float = 0.0
+    LLM_TEMPERATURE: float = 0.2
     LLM_EMBEDDING_MODEL: str = "text-embedding-3-small"
 
     CHAT_MEMORY_KEY: str = "chat_memory"
@@ -21,9 +21,7 @@ class Settings(BaseSettings):
     DOCS_DIR: str = "docs"
     DOCS_FILENAME: str = "guide.pdf"
 
-    # short doc just for quick test - delete it after
-    TEST_DOC_NAME: str = "test.txt"
-
+    TOP_K_RETRIEVED: int = 6
 
 settings = Settings()
 

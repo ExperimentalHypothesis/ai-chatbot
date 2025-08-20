@@ -5,7 +5,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_core.embeddings import Embeddings
 from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import TextLoader
+from langchain_community.document_loaders import TextLoader, PyPDFLoader
 
 from src.config import Settings
 
@@ -23,7 +23,7 @@ class EmbeddingService:
         self.text_splitter = self._init_text_splitter()
         self.vector_store = None
 
-    def get_retriever(self, k: int = 4):
+    def get_retriever(self, k: int):
         if self.vector_store is None:
             self.logger.info(f"Attempting to load vector store {self.settings.DB_DIR}")
 
@@ -43,7 +43,7 @@ class EmbeddingService:
     def embed_documents(self):
         self.logger.info(f"Embedding documents into collection: '{self.settings.DB_COLLECTION}'...")
 
-        documents = self._load_documents()
+        documents = self._load_pdf()
         if not documents:
             self.logger.warning(f"No documents found to embed. Please check your directory.")
             return
@@ -58,17 +58,17 @@ class EmbeddingService:
         )
         self.logger.info(f"Documents processed and stored successfully in {self.settings.DB_DIR}.")
 
-    def _load_documents(self):
+    def _load_pdf(self):
         self.logger.info("Loading documents...")
 
         all_documents = []
-        file_path = os.path.join(self.settings.DOCS_DIR, self.settings.TEST_DOC_NAME)
+        file_path = os.path.join(self.settings.DOCS_DIR, self.settings.DOCS_FILENAME)
 
         if not os.path.exists(file_path):
             self.logger.warning(f"Document path '{file_path}' does not exist.")
             return []
 
-        loader = TextLoader(file_path)
+        loader = PyPDFLoader(file_path)
         loaded_docs = loader.load()
         all_documents.extend(loaded_docs)
         return all_documents

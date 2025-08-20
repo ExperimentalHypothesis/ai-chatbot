@@ -41,11 +41,11 @@ python main.py
 
 ## Features
 
-- **Retrieval-Augmented Generation (RAG):** Provides answers grounded in the content of the documents, reducing hallucinations.
+- **Retrieval-Augmented Generation (RAG):**  Answers grounded in the content of the documents only. It is actually very strict about that.
 - **Persistent Vector Storage:** Uses ChromaDB to store document embeddings, so you only need to process your documents once.
 - **Context-Aware Conversations:** Maintains a chat history to understand follow-up questions and provide coherent conversational answers.
 - **Save Conversation:** Able to save conversation history a local .txt file 
-- **Interactive CLI:** A simple and easy-to-use command-line interface for interacting with the chatbot.
+- **Simple GUI:** A simple and easy-to-use GUI interface for interacting with the chatbot.
 
 
 ## TODOs: Next Steps & Improvements
